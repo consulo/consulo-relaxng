@@ -16,11 +16,17 @@
 
 package org.intellij.plugins.relaxNG.convert;
 
+import java.io.File;
+
+import org.intellij.plugins.relaxNG.ApplicationLoader;
+import org.intellij.plugins.relaxNG.compact.RncFileType;
+import org.intellij.plugins.relaxNG.validation.ValidateAction;
+import com.intellij.ide.highlighter.DTDFileType;
+import com.intellij.ide.highlighter.XmlFileType;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -29,11 +35,6 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.xml.XmlDocument;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
-import org.intellij.plugins.relaxNG.ApplicationLoader;
-import org.intellij.plugins.relaxNG.compact.RncFileType;
-import org.intellij.plugins.relaxNG.validation.ValidateAction;
-
-import java.io.File;
 
 /*
 * Created by IntelliJ IDEA.
@@ -63,7 +64,7 @@ public class ConvertSchemaAction extends AnAction {
 
     final VirtualFile file = files[0];
     final FileType type = file.getFileType();
-    if (type == StdFileTypes.XML) {
+    if (type == XmlFileType.INSTANCE) {
       final PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
       if (psiFile instanceof XmlFile) {
         final XmlDocument document = ((XmlFile)psiFile).getDocument();
@@ -78,13 +79,13 @@ public class ConvertSchemaAction extends AnAction {
       }
       if (files.length > 1) {
         for (VirtualFile virtualFile : files) {
-          if (virtualFile.getFileType() != StdFileTypes.XML || getInputType(project, virtualFile) != null) {
+          if (virtualFile.getFileType() != XmlFileType.INSTANCE || getInputType(project, virtualFile) != null) {
             return null;
           }
         }
       }
       return SchemaType.XML;
-    } else if (type == StdFileTypes.DTD && files.length == 1) {
+    } else if (type == DTDFileType.INSTANCE && files.length == 1) {
       return SchemaType.DTD;
     } else if (type == RncFileType.getInstance() && files.length == 1) {
       return SchemaType.RNC;

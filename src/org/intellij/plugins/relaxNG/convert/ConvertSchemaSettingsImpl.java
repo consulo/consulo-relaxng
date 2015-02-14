@@ -16,11 +16,33 @@
 
 package org.intellij.plugins.relaxNG.convert;
 
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+
+import org.intellij.plugins.relaxNG.compact.RncFileType;
+import org.jetbrains.annotations.NotNull;
+import com.intellij.ide.highlighter.DTDFileType;
+import com.intellij.ide.highlighter.XmlFileType;
 import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -32,18 +54,6 @@ import com.intellij.openapi.vfs.encoding.EncodingManager;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.psi.codeStyle.CodeStyleSettingsManager;
 import com.intellij.ui.DocumentAdapter;
-import org.intellij.plugins.relaxNG.compact.RncFileType;
-import org.jetbrains.annotations.NotNull;
-
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.io.File;
-import java.nio.charset.Charset;
-import java.util.*;
 
 /*
 * Created by IntelliJ IDEA.
@@ -84,7 +94,7 @@ public class ConvertSchemaSettingsImpl implements ConvertSchemaSettings {
       case RNG:
         myOutputRng.setVisible(false);
         myOutputXsd.setSelected(true);
-        type = StdFileTypes.XML;
+        type = XmlFileType.INSTANCE;
         break;
       case RNC:
         myOutputRnc.setVisible(false);
@@ -94,16 +104,16 @@ public class ConvertSchemaSettingsImpl implements ConvertSchemaSettings {
       case XSD:
         myOutputXsd.setVisible(false);
         myOutputRng.setSelected(true);
-        type = StdFileTypes.XML;
+        type = XmlFileType.INSTANCE;
         break;
       case DTD:
         myOutputDtd.setVisible(false);
         myOutputRng.setSelected(true);
-        type = StdFileTypes.DTD;
+        type = DTDFileType.INSTANCE;
         break;
       case XML:
         myOutputRng.setSelected(true);
-        type = StdFileTypes.XML;
+        type = XmlFileType.INSTANCE;
         break;
       default:
         assert false;

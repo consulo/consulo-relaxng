@@ -16,13 +16,23 @@
 
 package org.intellij.plugins.relaxNG.inspections;
 
+import org.intellij.plugins.relaxNG.ApplicationLoader;
+import org.intellij.plugins.relaxNG.compact.psi.RncDefine;
+import org.intellij.plugins.relaxNG.compact.psi.RncElementVisitor;
+import org.intellij.plugins.relaxNG.compact.psi.RncGrammar;
+import org.intellij.plugins.relaxNG.compact.psi.impl.RncDefineImpl;
+import org.intellij.plugins.relaxNG.model.resolve.RelaxIncludeIndex;
+import org.intellij.plugins.relaxNG.xml.dom.RngGrammar;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
+import com.intellij.ide.highlighter.XmlFileType;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -40,16 +50,6 @@ import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.Query;
 import com.intellij.util.xml.DomElement;
 import com.intellij.util.xml.DomManager;
-import org.intellij.plugins.relaxNG.ApplicationLoader;
-import org.intellij.plugins.relaxNG.compact.psi.RncDefine;
-import org.intellij.plugins.relaxNG.compact.psi.RncElementVisitor;
-import org.intellij.plugins.relaxNG.compact.psi.RncGrammar;
-import org.intellij.plugins.relaxNG.compact.psi.impl.RncDefineImpl;
-import org.intellij.plugins.relaxNG.model.resolve.RelaxIncludeIndex;
-import org.intellij.plugins.relaxNG.xml.dom.RngGrammar;
-import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by IntelliJ IDEA.
@@ -129,7 +129,7 @@ public class UnusedDefineInspection extends BaseInspection {
 
     public void visitXmlTag(XmlTag tag) {
       final PsiFile file = tag.getContainingFile();
-      if (file.getFileType() != StdFileTypes.XML) {
+      if (file.getFileType() != XmlFileType.INSTANCE) {
         return;
       }
       if (!tag.getLocalName().equals("define")) {

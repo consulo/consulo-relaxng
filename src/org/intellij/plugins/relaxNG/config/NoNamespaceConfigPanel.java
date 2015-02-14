@@ -16,11 +16,19 @@
 
 package org.intellij.plugins.relaxNG.config;
 
+import java.awt.event.ActionEvent;
+import java.io.File;
+
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import org.intellij.plugins.relaxNG.compact.RncFileType;
+import com.intellij.ide.highlighter.XmlFileType;
 import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.editor.HectorComponentPanel;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
@@ -31,11 +39,6 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import org.intellij.plugins.relaxNG.compact.RncFileType;
-
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.io.File;
 
 /**
  * Created by IntelliJ IDEA.
@@ -61,7 +64,7 @@ class NoNamespaceConfigPanel extends HectorComponentPanel {
         final boolean b = super.isFileSelectable(file);
         if (b) {
           final FileType type = file.getFileType();
-          if (type != StdFileTypes.XML) {
+          if (type != XmlFileType.INSTANCE) {
             return type == RncFileType.getInstance();
           }
         }

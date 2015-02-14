@@ -1,5 +1,21 @@
 package org.intellij.plugins.relaxNG.model.resolve;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.Icon;
+
+import org.intellij.plugins.relaxNG.ApplicationLoader;
+import org.intellij.plugins.relaxNG.compact.RncFileType;
+import org.intellij.plugins.relaxNG.model.CommonElement;
+import org.intellij.plugins.relaxNG.model.Define;
+import org.intellij.plugins.relaxNG.model.Grammar;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.intellij.ide.highlighter.XmlFileType;
 import com.intellij.navigation.ColoredItemPresentation;
 import com.intellij.navigation.ItemPresentation;
@@ -7,7 +23,6 @@ import com.intellij.navigation.NavigationItem;
 import com.intellij.navigation.PsiElementNavigationItem;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.ArchiveFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -19,22 +34,15 @@ import com.intellij.psi.meta.PsiMetaOwner;
 import com.intellij.psi.meta.PsiPresentableMetaData;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.xml.XmlFile;
-import com.intellij.util.indexing.*;
+import com.intellij.util.indexing.DataIndexer;
+import com.intellij.util.indexing.FileBasedIndex;
+import com.intellij.util.indexing.FileContent;
+import com.intellij.util.indexing.ID;
+import com.intellij.util.indexing.ScalarIndexExtension;
 import com.intellij.util.io.EnumeratorStringDescriptor;
 import com.intellij.util.io.KeyDescriptor;
 import com.intellij.util.text.CharArrayUtil;
 import com.intellij.util.xml.NanoXmlUtil;
-import org.intellij.plugins.relaxNG.ApplicationLoader;
-import org.intellij.plugins.relaxNG.compact.RncFileType;
-import org.intellij.plugins.relaxNG.model.CommonElement;
-import org.intellij.plugins.relaxNG.model.Define;
-import org.intellij.plugins.relaxNG.model.Grammar;
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.swing.*;
-import java.util.*;
 
 /*
 * Created by IntelliJ IDEA.
@@ -144,7 +152,7 @@ public class RelaxSymbolIndex extends ScalarIndexExtension<String> {
           return false; // there is lots and lots of custom XML inside zip files
         }
         final FileType fileType = file.getFileType();
-        return fileType == StdFileTypes.XML || fileType == RncFileType.getInstance();
+        return fileType == XmlFileType.INSTANCE || fileType == RncFileType.getInstance();
       }
     };
   }

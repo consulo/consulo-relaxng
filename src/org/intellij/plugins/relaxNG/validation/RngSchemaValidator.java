@@ -16,22 +16,8 @@
 
 package org.intellij.plugins.relaxNG.validation;
 
-import com.intellij.lang.ASTNode;
-import com.intellij.lang.annotation.AnnotationHolder;
-import com.intellij.lang.annotation.ExternalAnnotator;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.StdFileTypes;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.psi.*;
-import com.intellij.psi.search.PsiElementProcessor;
-import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.psi.xml.*;
+import java.net.URL;
+
 import org.intellij.plugins.relaxNG.ApplicationLoader;
 import org.intellij.plugins.relaxNG.compact.RncFileType;
 import org.intellij.plugins.relaxNG.compact.psi.RncFile;
@@ -41,8 +27,30 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import java.net.URL;
+import com.intellij.ide.highlighter.XmlFileType;
+import com.intellij.lang.ASTNode;
+import com.intellij.lang.annotation.AnnotationHolder;
+import com.intellij.lang.annotation.ExternalAnnotator;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.util.Comparing;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiErrorElement;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiRecursiveElementVisitor;
+import com.intellij.psi.search.PsiElementProcessor;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.xml.XmlAttribute;
+import com.intellij.psi.xml.XmlChildRole;
+import com.intellij.psi.xml.XmlDocument;
+import com.intellij.psi.xml.XmlFile;
+import com.intellij.psi.xml.XmlTag;
 
 /**
  * Created by IntelliJ IDEA.
@@ -54,7 +62,7 @@ public class RngSchemaValidator extends ExternalAnnotator {
 
   public void annotate(final PsiFile file, final AnnotationHolder holder) {
     final FileType type = file.getFileType();
-    if (type != StdFileTypes.XML && type != RncFileType.getInstance()) {
+    if (type != XmlFileType.INSTANCE && type != RncFileType.getInstance()) {
       return;
     }
     final XmlFile xmlfile = (XmlFile)file;
@@ -62,7 +70,7 @@ public class RngSchemaValidator extends ExternalAnnotator {
     if (document == null) {
       return;
     }
-    if (type == StdFileTypes.XML) {
+    if (type == XmlFileType.INSTANCE) {
       final XmlTag rootTag = document.getRootTag();
       if (rootTag == null) {
         return;
