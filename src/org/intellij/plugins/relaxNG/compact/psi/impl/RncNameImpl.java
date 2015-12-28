@@ -16,270 +16,359 @@
 
 package org.intellij.plugins.relaxNG.compact.psi.impl;
 
+import org.intellij.plugins.relaxNG.compact.RncElementTypes;
+import org.intellij.plugins.relaxNG.compact.RncFileType;
+import org.intellij.plugins.relaxNG.compact.RncTokenTypes;
+import org.intellij.plugins.relaxNG.compact.psi.RncDecl;
+import org.intellij.plugins.relaxNG.compact.psi.RncElement;
+import org.intellij.plugins.relaxNG.compact.psi.RncElementVisitor;
+import org.intellij.plugins.relaxNG.compact.psi.RncFile;
+import org.intellij.plugins.relaxNG.compact.psi.RncGrammar;
+import org.intellij.plugins.relaxNG.compact.psi.RncName;
+import org.intellij.plugins.relaxNG.compact.psi.util.EscapeUtil;
+import org.intellij.plugins.relaxNG.compact.psi.util.RenameUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import com.intellij.codeInsight.CodeInsightUtilCore;
 import com.intellij.codeInsight.daemon.EmptyResolveMessageProvider;
-import com.intellij.codeInsight.daemon.QuickFixProvider;
-import com.intellij.codeInsight.daemon.impl.HighlightInfo;
-import com.intellij.codeInsight.daemon.impl.quickfix.QuickFixAction;
-import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.lookup.LookupItem;
-import com.intellij.codeInsight.template.*;
+import com.intellij.codeInsight.template.Expression;
+import com.intellij.codeInsight.template.ExpressionContext;
+import com.intellij.codeInsight.template.Result;
+import com.intellij.codeInsight.template.Template;
+import com.intellij.codeInsight.template.TemplateManager;
+import com.intellij.codeInsight.template.TextResult;
+import com.intellij.codeInspection.LocalQuickFix;
+import com.intellij.codeInspection.LocalQuickFixProvider;
+import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.*;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.ResolveState;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.scope.BaseScopeProcessor;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.IncorrectOperationException;
-import org.intellij.plugins.relaxNG.compact.RncElementTypes;
-import org.intellij.plugins.relaxNG.compact.RncFileType;
-import org.intellij.plugins.relaxNG.compact.RncTokenTypes;
-import org.intellij.plugins.relaxNG.compact.psi.*;
-import org.intellij.plugins.relaxNG.compact.psi.util.EscapeUtil;
-import org.intellij.plugins.relaxNG.compact.psi.util.RenameUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Created by IntelliJ IDEA.
  * User: sweinreuter
  * Date: 14.08.2007
  */
-public class RncNameImpl extends RncElementImpl implements RncName, PsiReference,
-        EmptyResolveMessageProvider, QuickFixProvider<RncNameImpl> {
+public class RncNameImpl extends RncElementImpl implements RncName, PsiReference, EmptyResolveMessageProvider, LocalQuickFixProvider
+{
 
-  private enum Kind {
-    NAMESPACE, DATATYPES
-  }
+	private enum Kind
+	{
+		NAMESPACE, DATATYPES
+	}
 
-  public RncNameImpl(ASTNode node) {
-    super(node);
-  }
+	public RncNameImpl(ASTNode node)
+	{
+		super(node);
+	}
 
-  @Nullable
-  public String getPrefix() {
-    final String[] parts = EscapeUtil.unescapeText(getNode()).split(":", 2);
-    return parts.length == 2 ? parts[0] : null;
-  }
+	@Override
+	@Nullable
+	public String getPrefix()
+	{
+		final String[] parts = EscapeUtil.unescapeText(getNode()).split(":", 2);
+		return parts.length == 2 ? parts[0] : null;
+	}
 
-  @NotNull
-  public String getLocalPart() {
-    final String[] parts = EscapeUtil.unescapeText(getNode()).split(":", 2);
-    return parts.length == 1 ? parts[0] : parts[1];
-  }
+	@Override
+	@NotNull
+	public String getLocalPart()
+	{
+		final String[] parts = EscapeUtil.unescapeText(getNode()).split(":", 2);
+		return parts.length == 1 ? parts[0] : parts[1];
+	}
 
-  @Override
-  public void accept(@NotNull RncElementVisitor visitor) {
-    visitor.visitName(this);
-  }
+	@Override
+	public void accept(@NotNull RncElementVisitor visitor)
+	{
+		visitor.visitName(this);
+	}
 
-  @Override
-  public PsiReference getReference() {
-    return getPrefix() == null ? null : this;
-  }
+	@Override
+	public PsiReference getReference()
+	{
+		return getPrefix() == null ? null : this;
+	}
 
-  public PsiElement getElement() {
-    return this;
-  }
+	@Override
+	public PsiElement getElement()
+	{
+		return this;
+	}
 
-  public TextRange getRangeInElement() {
-    return TextRange.from(0, getText().indexOf(':'));
-  }
+	@Override
+	public TextRange getRangeInElement()
+	{
+		return TextRange.from(0, getText().indexOf(':'));
+	}
 
-  @Nullable
-  public PsiElement resolve() {
-    final MyResolver resolver = new MyResolver(getPrefix(), getKind());
-    getContainingFile().processDeclarations(resolver, ResolveState.initial(), this, this);
-    return resolver.getResult();
-  }
+	@Override
+	@Nullable
+	public PsiElement resolve()
+	{
+		final MyResolver resolver = new MyResolver(getPrefix(), getKind());
+		getContainingFile().processDeclarations(resolver, ResolveState.initial(), this, this);
+		return resolver.getResult();
+	}
 
-  private Kind getKind() {
-    final IElementType parent = getNode().getTreeParent().getElementType();
-    if (parent == RncElementTypes.DATATYPE_PATTERN) {
-      return Kind.DATATYPES;
-    } else {
-      return Kind.NAMESPACE;
-    }
-  }
+	private Kind getKind()
+	{
+		final IElementType parent = getNode().getTreeParent().getElementType();
+		if(parent == RncElementTypes.DATATYPE_PATTERN)
+		{
+			return Kind.DATATYPES;
+		}
+		else
+		{
+			return Kind.NAMESPACE;
+		}
+	}
 
-  @NotNull
-  public String getCanonicalText() {
-    return getRangeInElement().substring(getText());
-  }
+	@Override
+	@NotNull
+	public String getCanonicalText()
+	{
+		return getRangeInElement().substring(getText());
+	}
 
-  public PsiElement handleElementRename(String newElementName) throws IncorrectOperationException {
-    final ASTNode node = getNode();
-    final ASTNode child = RenameUtil.createPrefixedNode(getManager(), newElementName, getLocalPart());
-    node.getTreeParent().replaceChild(node, child);
-    return child.getPsi();
-  }
+	@Override
+	public PsiElement handleElementRename(String newElementName) throws IncorrectOperationException
+	{
+		final ASTNode node = getNode();
+		final ASTNode child = RenameUtil.createPrefixedNode(getManager(), newElementName, getLocalPart());
+		node.getTreeParent().replaceChild(node, child);
+		return child.getPsi();
+	}
 
-  public PsiElement bindToElement(@NotNull PsiElement element) throws IncorrectOperationException {
-    throw new UnsupportedOperationException();
-  }
+	@Override
+	public PsiElement bindToElement(@NotNull PsiElement element) throws IncorrectOperationException
+	{
+		throw new UnsupportedOperationException();
+	}
 
-  public boolean isReferenceTo(PsiElement element) {
-    return element instanceof RncElement && Comparing.equal(resolve(), element);
-  }
+	@Override
+	public boolean isReferenceTo(PsiElement element)
+	{
+		return element instanceof RncElement && Comparing.equal(resolve(), element);
+	}
 
-  @NotNull
-  public Object[] getVariants() {
-    return ArrayUtil.EMPTY_OBJECT_ARRAY;
-  }
+	@Override
+	@NotNull
+	public Object[] getVariants()
+	{
+		return ArrayUtil.EMPTY_OBJECT_ARRAY;
+	}
 
-  public boolean isSoft() {
-    final String prefix = getPrefix();
-    return "xsd".equals(prefix) || "xml".equals(prefix);
-  }
+	@Override
+	public boolean isSoft()
+	{
+		final String prefix = getPrefix();
+		return "xsd".equals(prefix) || "xml".equals(prefix);
+	}
 
-  @NotNull
-  public String getUnresolvedMessagePattern() {
-    return "Unresolved namespace prefix ''{0}''";
-  }
+	@Override
+	@NotNull
+	public String getUnresolvedMessagePattern()
+	{
+		return "Unresolved namespace prefix ''{0}''";
+	}
 
-  public void registerQuickfix(HighlightInfo info, final RncNameImpl reference) {
-    if (reference.getPrefix() == null) return; // huh?
+	@Nullable
+	@Override
+	public LocalQuickFix[] getQuickFixes()
+	{
+		if(getPrefix() != null)
+		{
+			return new LocalQuickFix[]{new CreateDeclFix(this)};
+		}
+		return LocalQuickFix.EMPTY_ARRAY;
+	}
 
-    QuickFixAction.registerQuickFixAction(info, new CreateDeclFix(reference));
-  }
+	private static class MyResolver extends BaseScopeProcessor
+	{
+		private final String myPrefix;
+		private final Kind myKind;
+		private PsiElement myResult;
 
-  private static class MyResolver extends BaseScopeProcessor {
-    private final String myPrefix;
-    private final Kind myKind;
-    private PsiElement myResult;
+		public MyResolver(String prefix, Kind kind)
+		{
+			myPrefix = prefix;
+			myKind = kind;
+		}
 
-    public MyResolver(String prefix, Kind kind) {
-      myPrefix = prefix;
-      myKind = kind;
-    }
+		@Override
+		public boolean execute(@NotNull PsiElement element, @NotNull ResolveState substitutor)
+		{
+			final ASTNode node = element.getNode();
+			if(node == null)
+			{
+				return true;
+			}
 
-    public boolean execute(@NotNull PsiElement element, ResolveState substitutor) {
-      final ASTNode node = element.getNode();
-      if (node == null) return true;
+			if(!(element instanceof RncDecl))
+			{
+				return false;
+			}
 
-      if (!(element instanceof RncDecl)) {
-        return false;
-      }
+			final IElementType type = node.getElementType();
+			if(myKind == Kind.NAMESPACE && type == RncElementTypes.NS_DECL)
+			{
+				if(checkDecl(element))
+				{
+					return false;
+				}
+			}
+			else if(myKind == Kind.DATATYPES && type == RncElementTypes.DATATYPES_DECL)
+			{
+				if(checkDecl(element))
+				{
+					return false;
+				}
+			}
 
-      final IElementType type = node.getElementType();
-      if (myKind == Kind.NAMESPACE && type == RncElementTypes.NS_DECL) {
-        if (checkDecl(element)) return false;
-      } else if (myKind == Kind.DATATYPES && type == RncElementTypes.DATATYPES_DECL) {
-        if (checkDecl(element)) return false;
-      }
+			return true;
+		}
 
-      return true;
-    }
+		private boolean checkDecl(PsiElement element)
+		{
+			if(myPrefix.equals(((RncDecl) element).getPrefix()))
+			{
+				myResult = element;
+				return true;
+			}
+			return false;
+		}
 
-    private boolean checkDecl(PsiElement element) {
-      if (myPrefix.equals(((RncDecl)element).getPrefix())) {
-        myResult = element;
-        return true;
-      }
-      return false;
-    }
+		public PsiElement getResult()
+		{
+			return myResult;
+		}
+	}
 
-    public PsiElement getResult() {
-      return myResult;
-    }
-  }
+	public static class CreateDeclFix implements LocalQuickFix
+	{
+		private final RncNameImpl myReference;
 
-  public static class CreateDeclFix implements IntentionAction {
-    private final RncNameImpl myReference;
+		public CreateDeclFix(RncNameImpl reference)
+		{
+			myReference = reference;
+		}
 
-    public CreateDeclFix(RncNameImpl reference) {
-      myReference = reference;
-    }
+		@Override
+		@NotNull
+		public String getName()
+		{
+			return getFamilyName() + " '" + myReference.getPrefix() + "'";
+		}
 
-    @NotNull
-      public String getText() {
-      return getFamilyName() + " '" + myReference.getPrefix() + "'";
-    }
+		@Override
+		@NotNull
+		public String getFamilyName()
+		{
+			return "Create " + myReference.getKind().name().toLowerCase() + " declaration";
+		}
 
-    @NotNull
-      public String getFamilyName() {
-      return "Create " + myReference.getKind().name().toLowerCase() + " declaration";
-    }
+		@Override
+		public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor)
+		{
+			final String prefix = myReference.getPrefix();
+			final PsiFileFactory factory = PsiFileFactory.getInstance(myReference.getProject());
+			final RncFile psiFile = (RncFile) factory.createFileFromText("dummy.rnc", RncFileType.getInstance(), myReference.getKind().name().toLowerCase() + " " + prefix + " = \"###\"");
+			final RncFile rncFile = (RncFile) myReference.getContainingFile();
+			final RncDecl[] declarations = rncFile.getDeclarations();
+			final RncDecl decl = psiFile.getDeclarations()[0];
+			final RncDecl e;
+			if(declarations.length > 0)
+			{
+				e = (RncDecl) rncFile.addAfter(decl, declarations[declarations.length - 1]);
+			}
+			else
+			{
+				final RncGrammar rncGrammar = rncFile.getGrammar();
+				if(rncGrammar != null)
+				{
+					e = (RncDecl) rncFile.addBefore(decl, rncGrammar);
+				}
+				else
+				{
+					e = (RncDecl) rncFile.add(decl);
+				}
+			}
 
-    public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
-      return myReference.isValid();
-    }
+			final ASTNode blockNode = e.getParent().getNode();
+			assert blockNode != null;
 
-    public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
-      final String prefix = myReference.getPrefix();
-      final PsiFileFactory factory = PsiFileFactory.getInstance(myReference.getProject());
-      final RncFile psiFile = (RncFile)factory.createFileFromText("dummy.rnc",
-                                                                  RncFileType.getInstance(),
-                                                                   myReference.getKind().name().toLowerCase() + " " + prefix + " = \"###\"");
-      final RncFile rncFile = (RncFile)myReference.getContainingFile();
-      final RncDecl[] declarations = rncFile.getDeclarations();
-      final RncDecl decl = psiFile.getDeclarations()[0];
-      final RncDecl e;
-      if (declarations.length > 0) {
-        e = (RncDecl)rncFile.addAfter(decl, declarations[declarations.length - 1]);
-      } else {
-        final RncGrammar rncGrammar = rncFile.getGrammar();
-        if (rncGrammar != null) {
-          e = (RncDecl)rncFile.addBefore(decl, rncGrammar);
-        } else {
-          e = (RncDecl)rncFile.add(decl);
-        }
-      }
+			final ASTNode newNode = e.getNode();
+			assert newNode != null;
 
-      final ASTNode blockNode = e.getParent().getNode();
-      assert blockNode != null;
+			CodeStyleManager.getInstance(e.getManager().getProject()).reformatNewlyAddedElement(blockNode, newNode);
 
-      final ASTNode newNode = e.getNode();
-      assert newNode != null;
+			final PsiElement literal = e.getLastChild();
+			assert literal != null;
 
-      CodeStyleManager.getInstance(e.getManager().getProject()).reformatNewlyAddedElement(blockNode, newNode);
+			final ASTNode literalNode = literal.getNode();
+			assert literalNode != null;
 
-      final SmartPsiElementPointer<RncDecl> p = SmartPointerManager.getInstance(project).createSmartPsiElementPointer(e);
-      PsiDocumentManager.getInstance(project).doPostponedOperationsAndUnblockDocument(editor.getDocument());
+			assert literalNode.getElementType() == RncTokenTypes.LITERAL;
 
-      final RncDecl d = p.getElement();
-      assert d != null;
+			final int offset = literal.getTextRange().getStartOffset();
 
-      final PsiElement literal = d.getLastChild();
-      assert literal != null;
+			literal.delete();
 
-      final ASTNode literalNode = literal.getNode();
-      assert literalNode != null;
+			VirtualFile virtualFile = myReference.getElement().getContainingFile().getVirtualFile();
+			if(virtualFile != null)
+			{
+				Editor editor = FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile, offset), true);
+				if(editor != null)
+				{
+					RncDecl rncDecl = CodeInsightUtilCore.forcePsiPostprocessAndRestoreElement(e);
 
-      assert literalNode.getElementType() == RncTokenTypes.LITERAL;
+					final TemplateManager manager = TemplateManager.getInstance(project);
+					final Template t = manager.createTemplate("", "");
+					t.addTextSegment(" \"");
+					final Expression expression = new Expression()
+					{
+						@Override
+						public Result calculateResult(ExpressionContext context)
+						{
+							return new TextResult("");
+						}
 
-      final int offset = literal.getTextRange().getStartOffset();
-      editor.getDocument().deleteString(literal.getTextRange().getStartOffset(), literal.getTextRange().getEndOffset());
+						@Override
+						public Result calculateQuickResult(ExpressionContext context)
+						{
+							return calculateResult(context);
+						}
 
-      final TemplateManager manager = TemplateManager.getInstance(project);
-      final Template t = manager.createTemplate("", "");
-      t.addTextSegment("\"");
-      final Expression expression = new Expression() {
-        public Result calculateResult(ExpressionContext context) {
-          return new TextResult("");
-        }
+						@Override
+						public LookupItem[] calculateLookupItems(ExpressionContext context)
+						{
+							return LookupItem.EMPTY_ARRAY;
+						}
+					};
+					t.addVariable("uri", expression, expression, true);
+					t.addTextSegment("\"");
+					t.addEndVariable();
 
-        public Result calculateQuickResult(ExpressionContext context) {
-          return calculateResult(context);
-        }
-
-        public LookupItem[] calculateLookupItems(ExpressionContext context) {
-          return LookupItem.EMPTY_ARRAY;
-        }
-      };
-      t.addVariable("uri", expression, expression, true);
-      t.addTextSegment("\"");
-      t.addEndVariable();
-
-      editor.getCaretModel().moveToOffset(offset);
-      manager.startTemplate(editor, t);
-    }
-
-    public boolean startInWriteAction() {
-      return true;
-    }
-  }
+					editor.getCaretModel().moveToOffset(rncDecl.getTextRange().getEndOffset());
+					manager.startTemplate(editor, t);
+				}
+			}
+		}
+	}
 }

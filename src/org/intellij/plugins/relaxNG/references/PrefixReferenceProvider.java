@@ -16,11 +16,12 @@
 
 package org.intellij.plugins.relaxNG.references;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.intellij.codeInsight.daemon.EmptyResolveMessageProvider;
-import com.intellij.codeInsight.daemon.QuickFixProvider;
-import com.intellij.codeInsight.daemon.impl.HighlightInfo;
-import com.intellij.codeInsight.daemon.impl.analysis.CreateNSDeclarationIntentionFix;
-import com.intellij.codeInsight.daemon.impl.quickfix.QuickFixAction;
+import com.intellij.codeInspection.LocalQuickFix;
+import com.intellij.codeInspection.LocalQuickFixProvider;
+import com.intellij.codeInspection.XmlQuickFixFactory;
 import com.intellij.lang.xml.XMLLanguage;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.TextRange;
@@ -36,91 +37,106 @@ import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.ProcessingContext;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /*
 * Created by IntelliJ IDEA.
 * User: sweinreuter
 * Date: 24.07.2007
 */
-public class PrefixReferenceProvider extends PsiReferenceProvider {
-  private static final Logger LOG = Logger.getInstance("#org.intellij.plugins.relaxNG.references.PrefixReferenceProvider");
+public class PrefixReferenceProvider extends PsiReferenceProvider
+{
+	private static final Logger LOG = Logger.getInstance("#org.intellij.plugins.relaxNG.references.PrefixReferenceProvider");
 
-  @NotNull
-  public PsiReference[] getReferencesByElement(@NotNull PsiElement element, @NotNull ProcessingContext context) {
-    final XmlAttributeValue value = (XmlAttributeValue)element;
+	@Override
+	@NotNull
+	public PsiReference[] getReferencesByElement(@NotNull PsiElement element, @NotNull ProcessingContext context)
+	{
+		final XmlAttributeValue value = (XmlAttributeValue) element;
 
-    final String s = value.getValue();
-    final int i = s.indexOf(':');
-    if (i <= 0 || s.startsWith("xml:")) {
-      return PsiReference.EMPTY_ARRAY;
-    }
+		final String s = value.getValue();
+		final int i = s.indexOf(':');
+		if(i <= 0 || s.startsWith("xml:"))
+		{
+			return PsiReference.EMPTY_ARRAY;
+		}
 
-    return new PsiReference[]{
-            new PrefixReference(value, i)
-    };
-  }
+		return new PsiReference[]{
+				new PrefixReference(value, i)
+		};
+	}
 
-  private static class PrefixReference extends BasicAttributeValueReference implements EmptyResolveMessageProvider, QuickFixProvider<PrefixReference> {
-    public PrefixReference(XmlAttributeValue value, int length) {
-      super(value, TextRange.from(1, length));
-    }
+	private static class PrefixReference extends BasicAttributeValueReference implements EmptyResolveMessageProvider, LocalQuickFixProvider
+	{
+		public PrefixReference(XmlAttributeValue value, int length)
+		{
+			super(value, TextRange.from(1, length));
+		}
 
-    @Nullable
-    public PsiElement resolve() {
-      final String prefix = getCanonicalText();
-      XmlTag tag = PsiTreeUtil.getParentOfType(getElement(), XmlTag.class);
-      while (tag != null) {
-        if (tag.getLocalNamespaceDeclarations().containsKey(prefix)) {
-          final XmlAttribute attribute = tag.getAttribute("xmlns:" + prefix, "");
-          final TextRange textRange = TextRange.from("xmlns:".length(), prefix.length());
-          return new SchemaPrefix(attribute, textRange, prefix);
-        }
-        tag = tag.getParentTag();
-      }
-      return null;
-    }
+		@Override
+		@Nullable
+		public PsiElement resolve()
+		{
+			final String prefix = getCanonicalText();
+			XmlTag tag = PsiTreeUtil.getParentOfType(getElement(), XmlTag.class);
+			while(tag != null)
+			{
+				if(tag.getLocalNamespaceDeclarations().containsKey(prefix))
+				{
+					final XmlAttribute attribute = tag.getAttribute("xmlns:" + prefix, "");
+					final TextRange textRange = TextRange.from("xmlns:".length(), prefix.length());
+					return new SchemaPrefix(attribute, textRange, prefix);
+				}
+				tag = tag.getParentTag();
+			}
+			return null;
+		}
 
-    @Override
-    public boolean isReferenceTo(PsiElement element) {
-      if (element instanceof SchemaPrefix && element.getContainingFile() == myElement.getContainingFile()) {
-        final PsiElement e = resolve();
-        if (e instanceof SchemaPrefix) {
-          final String s = ((SchemaPrefix)e).getName();
-          return s != null && s.equals(((SchemaPrefix)element).getName());
-        }
-      }
-      return super.isReferenceTo(element);
-    }
+		@Override
+		public boolean isReferenceTo(PsiElement element)
+		{
+			if(element instanceof SchemaPrefix && element.getContainingFile() == myElement.getContainingFile())
+			{
+				final PsiElement e = resolve();
+				if(e instanceof SchemaPrefix)
+				{
+					final String s = ((SchemaPrefix) e).getName();
+					return s != null && s.equals(((SchemaPrefix) element).getName());
+				}
+			}
+			return super.isReferenceTo(element);
+		}
 
-    public void registerQuickfix(HighlightInfo info, PrefixReference reference) {
-      try {
-        final PsiElement element = reference.getElement();
-        final XmlElementFactory factory = XmlElementFactory.getInstance(element.getProject());
-        final String value = ((XmlAttributeValue)element).getValue();
-        final String[] name = value.split(":");
-        final XmlTag tag = factory.createTagFromText("<" + (name.length > 1 ? name[1] : value) + " />", XMLLanguage.INSTANCE);
+		@Nullable
+		@Override
+		public LocalQuickFix[] getQuickFixes()
+		{
+			final PsiElement element = getElement();
+			final XmlElementFactory factory = XmlElementFactory.getInstance(element.getProject());
+			final String value = ((XmlAttributeValue) element).getValue();
+			final String[] name = value.split(":");
+			final XmlTag tag = factory.createTagFromText("<" + (name.length > 1 ? name[1] : value) + " />", XMLLanguage.INSTANCE);
 
-        CreateNSDeclarationIntentionFix fix = CreateNSDeclarationIntentionFix.createFix(tag, reference.getCanonicalText());
-        QuickFixAction.registerQuickFixAction(info, fix);
-      } catch (Throwable e) {
-        LOG.error(e);
-      }
-    }
+			return new LocalQuickFix[]{XmlQuickFixFactory.getInstance().createNSDeclarationIntentionFix(tag, getCanonicalText(), null)};
+		}
 
-    @NotNull
-    public Object[] getVariants() {
-      return ArrayUtil.EMPTY_OBJECT_ARRAY;
-    }
+		@Override
+		@NotNull
+		public Object[] getVariants()
+		{
+			return ArrayUtil.EMPTY_OBJECT_ARRAY;
+		}
 
-    public boolean isSoft() {
-      return false;
-    }
+		@Override
+		public boolean isSoft()
+		{
+			return false;
+		}
 
-    @NotNull
-    public String getUnresolvedMessagePattern() {
-      return "Undefined namespace prefix ''{0}''";
-    }
-  }
+		@Override
+		@NotNull
+		public String getUnresolvedMessagePattern()
+		{
+			return "Undefined namespace prefix ''{0}''";
+		}
+	}
 }
