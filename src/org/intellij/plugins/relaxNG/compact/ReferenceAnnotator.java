@@ -25,7 +25,6 @@ import org.intellij.plugins.relaxNG.compact.psi.RncName;
 import org.intellij.plugins.relaxNG.compact.psi.RncParentRef;
 import org.intellij.plugins.relaxNG.compact.psi.RncRef;
 import org.jetbrains.annotations.NotNull;
-import org.mustbe.consulo.RequiredReadAction;
 import com.intellij.codeInsight.daemon.EmptyResolveMessageProvider;
 import com.intellij.codeInspection.InspectionManager;
 import com.intellij.codeInspection.LocalQuickFix;
@@ -39,6 +38,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
+import consulo.annotations.RequiredReadAction;
 
 /**
  * Created by IntelliJ IDEA.

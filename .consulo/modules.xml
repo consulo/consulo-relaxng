@@ -4,8 +4,8 @@
     <modules>
       <module name="consulo-relaxng" dirurl="file://$PROJECT_DIR$" current-layer="Default">
         <module-layer name="Default">
-          <extension id="consulo-plugin" sdk-module-name="" sdk-name="Consulo 1.SNAPSHOT" custom-plugin-dir-url="file://$MODULE_DIR$/dep" />
-          <extension id="java" sdk-module-name="" sdk-name="1.6" language-level-module-name="" language-level-name="JDK_1_6" special-dir-location="MODULE_DIR" />
+          <extension id="consulo-plugin" sdk-module-name="" sdk-name="Consulo SNAPSHOT" />
+          <extension id="java" sdk-module-name="" sdk-name="1.8" language-level-module-name="" language-level-name="JDK_1_8" special-dir-location="MODULE_DIR" bytecode-version="1.8" />
           <content url="file://$MODULE_DIR$">
             <content-folder type="PRODUCTION_RESOURCE" url="file://$MODULE_DIR$/resources" />
             <content-folder type="PRODUCTION" url="file://$MODULE_DIR$/src" />
@@ -56,6 +56,7 @@
               </binaries>
             </library>
           </orderEntry>
+          <orderEntry type="library" name="consulo-plugin: com.intellij.xml" level="project" />
         </module-layer>
       </module>
     </modules>

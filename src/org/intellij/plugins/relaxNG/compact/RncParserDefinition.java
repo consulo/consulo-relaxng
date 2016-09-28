@@ -16,12 +16,16 @@
 
 package org.intellij.plugins.relaxNG.compact;
 
+import org.intellij.plugins.relaxNG.compact.lexer.CompactSyntaxLexerAdapter;
+import org.intellij.plugins.relaxNG.compact.parser.RncParser;
+import org.intellij.plugins.relaxNG.compact.psi.RncElementVisitor;
+import org.intellij.plugins.relaxNG.compact.psi.impl.RncElementImpl;
+import org.intellij.plugins.relaxNG.compact.psi.impl.RncFileImpl;
+import org.jetbrains.annotations.NotNull;
 import com.intellij.lang.ASTNode;
-import com.intellij.lang.LanguageVersion;
 import com.intellij.lang.ParserDefinition;
 import com.intellij.lang.PsiParser;
 import com.intellij.lexer.Lexer;
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -30,12 +34,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.util.NotNullFunction;
-import org.intellij.plugins.relaxNG.compact.lexer.CompactSyntaxLexerAdapter;
-import org.intellij.plugins.relaxNG.compact.parser.RncParser;
-import org.intellij.plugins.relaxNG.compact.psi.RncElementVisitor;
-import org.intellij.plugins.relaxNG.compact.psi.impl.RncElementImpl;
-import org.intellij.plugins.relaxNG.compact.psi.impl.RncFileImpl;
-import org.jetbrains.annotations.NotNull;
+import consulo.lang.LanguageVersion;
 
 /**
  * Created by IntelliJ IDEA.
@@ -47,12 +46,12 @@ public class RncParserDefinition implements ParserDefinition {
   private static final TokenSet myCommentTypes = TokenSet.orSet(RncTokenTypes.COMMENTS, RncTokenTypes.DOC_TOKENS);
 
   @NotNull
-  public Lexer createLexer(@NotNull Project project, @NotNull LanguageVersion languageVersion) {
+  public Lexer createLexer( @NotNull LanguageVersion languageVersion) {
     return new CompactSyntaxLexerAdapter();
   }
 
   @NotNull
-  public PsiParser createParser(@NotNull Project project, @NotNull LanguageVersion languageVersion) {
+  public PsiParser createParser(@NotNull LanguageVersion languageVersion) {
     return new RncParser();
   }
 
