@@ -1,5 +1,9 @@
 package org.intellij.html;
 
+import org.intellij.plugins.relaxNG.compact.psi.RncDecl;
+import org.intellij.plugins.relaxNG.compact.psi.RncFile;
+import org.intellij.plugins.relaxNG.compact.psi.RncNsDecl;
+import org.intellij.plugins.relaxNG.compact.psi.impl.RncDocument;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.filters.AndFilter;
@@ -7,12 +11,8 @@ import com.intellij.psi.filters.ClassFilter;
 import com.intellij.psi.filters.XmlTextFilter;
 import com.intellij.psi.meta.MetaDataContributor;
 import com.intellij.psi.meta.MetaDataRegistrar;
-import com.intellij.util.ReflectionCache;
+import com.intellij.util.ReflectionUtil;
 import com.intellij.xml.util.XmlUtil;
-import org.intellij.plugins.relaxNG.compact.psi.RncDecl;
-import org.intellij.plugins.relaxNG.compact.psi.RncFile;
-import org.intellij.plugins.relaxNG.compact.psi.RncNsDecl;
-import org.intellij.plugins.relaxNG.compact.psi.impl.RncDocument;
 
 /**
  * @author Eugene.Kudelevsky
@@ -34,7 +34,7 @@ public class RngHtml5MetaDataContributor implements MetaDataContributor {
     }
 
     public boolean isClassAcceptable(Class hintClass) {
-      return ReflectionCache.isAssignable(RncDocument.class, hintClass);
+      return ReflectionUtil.isAssignable(RncDocument.class, hintClass);
     }
 
     public boolean isAcceptable(Object element, PsiElement context) {
